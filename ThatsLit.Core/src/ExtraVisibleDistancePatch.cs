@@ -18,16 +18,17 @@ namespace ThatsLit
 
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(EnemyInfo), "CheckVisibility");
+            // not sure that this is the right method to replace, neeeds testing
+            return AccessTools.Method(typeof(EnemyInfo), "method_0");
         }
 
         [PatchPrefix]
         [HarmonyAfter("me.sol.sain")]
-        public static bool PatchPrefix(EnemyInfo __instance, KeyValuePair<EnemyPart, EnemyPartData> part, ref float addVisibility)
+        public static bool PatchPrefix(EnemyInfo __instance, BotOwner owner, ref float __result)
         {
             ThatsLitPlugin.swExtraVisDis.MaybeResume();
             if (__instance?.Owner == null
-             || (part.Key?.Owner?.IsAI ?? true) == true
+             || (owner?.IsAI ?? true) == true
              || !ThatsLitPlugin.EnabledMod.Value
              || ThatsLitPlugin.ExtraVisionDistanceScale.Value == 0
              || !ThatsLitPlugin.EnabledLighting.Value
@@ -92,6 +93,10 @@ namespace ThatsLit
             ScoreCalculator scoreCalculator = Singleton<ThatsLitGameworld>.Instance.ScoreCalculator;
             FrameStats frame0 = player.PlayerLitScoreProfile?.frame0 ?? default;
             var originalDist = __instance.Owner.LookSensor.VisibleDist;
+
+            // Default value
+            float addVisibility = 1f;
+
             if (thermalActive)
             {
                 float compensation = thermalRange - originalDist;
@@ -150,7 +155,11 @@ namespace ThatsLit
             }
 
             ThatsLitPlugin.swExtraVisDis.Stop();
-
+            // replace original method return value only if we changed visibility 
+            if (addVisibility != 1f) {
+                __result = addVisibility;
+                return false;
+            }
             return true;
         }
     }
