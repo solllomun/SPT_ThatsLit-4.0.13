@@ -1,10 +1,6 @@
-The shields.io badges broke so I'll recreate them
-
-{ downloads | 201k } { downloads@latest | 31k }
-
 Latest VirusTotal scan: https://www.virustotal.com/gui/file/3d9b96f675fcd1c42d33b38764a7880d7d0ce1db797536d962cfe14aeec0795a?nocache=1
 
-Please understand I fixed this code so I could play SPT with That's Lit because it's my favorite mod. I'm only uploading my code by request of a friend, I take no personal responsibility for maintaining or updating my fork of this mod beyond this version. In total, this mod rewrite from first sitting down to do initial setup to running my first raid with the final compiled mod, took about 48 hours of real time. Not 48 hours of working time, maybe 6 in total, mostly consisting of prompting, editing prompts, reading code changes, and waiting for tasks to execute. I was really only slowed down by having to wait for my Claude Code usage limits to reset. AI is awesome.
+Please understand I fixed this code so I could play SPT with That's Lit because it's my favorite mod. I'm only uploading my code by request of a friend, I take no personal responsibility for maintaining or updating my fork of this mod beyond this version.
 
 This mod is likely unbalanced, as there were logic changes that had to be made in order to restore functionality that may be causing unwanted effects on AI behavior. The MIN_COEF change is personal preference as I like the idea of bots missing me entirely if I'm hiding well enough, I can only hypothesize about the 0.005 minimum impact coefficient 3371 used in his code, but my guess is it's to combat this from being able to happen. I removed it.
 
