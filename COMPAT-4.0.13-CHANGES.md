@@ -2,7 +2,9 @@
 
 Unofficial community compatibility patch of **That's Lit v1.4000.0** for **SPT 4.0.13 / EFT 0.16.9.0.40087**.
 
-This is a restoration fork whose sole purpose is to make That's Lit **compile and run** on EFT build `40087`. It is **not** maintained beyond this fix — no new features, no ongoing support. All original design and credit belong to the original author of That's Lit (**BA**, per the in-source copyright). If an officially updated That's Lit exists for your SPT version, prefer it over this patch.
+Holy AI
+
+This is a restoration fork whose sole purpose is to make That's Lit **compile and run** on EFT build `40087`. It is **not** maintained beyond this fix — no new features, no ongoing support (I just had the AI write this, I'm not a competent c# modder and someone smarter could probably build on this to a much better degree than I have). All original design and credit belong to the original author of That's Lit (**BA**, per the in-source copyright). If an officially updated That's Lit exists for your SPT version, prefer it over this patch.
 
 The original mod was built for SPT 3.11 / EFT build `35392`. Between that build and `40087`, BSG obfuscation numbers shifted, several EFT method signatures changed, the per-part visibility API was refactored, and — most importantly — the meaning of the core "seen coefficient" was inverted. The changes below address each of those.
 
