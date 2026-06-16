@@ -136,33 +136,3 @@ All other references (BepInEx, spt-core, spt-reflection, Unity modules, Comfort,
 ## Known limitation
 
 The terrain-detail concealment table in `src/Utility.cs` (`CalculateDetailScore`) is still **3.11-era**. It matches grass/foliage prototypes by the last 6 hex characters of their asset names, and EFT `40087` introduced/re-hashed terrain details that aren't in the table (observed example: `Detail_1_grass_cut_dry_2d5ee9`, suffix `2d5ee9`). Unrecognized details produce **zero foliage concealment** (no crash, no fallback) and, with debug enabled, a throttled "Missing terrain detail" notice. Concealment from *recognized* grass still works; only the new/changed prototypes are missed. Re-surveying the 4.0 terrain-detail hashes is out of scope for this compatibility fix.
-
----
-
-## Building
-
-Requirements:
-
-- **.NET SDK** (a recent SDK is fine; the project targets `net472`).
-- **.NET Framework 4.7.2 reference assemblies** — restored from NuGet (`nuget.org` reachable). If a stale local NuGet source blocks restore, disable it (`dotnet nuget disable source "<name>"`).
-- **A deobfuscated / publicized `hollowed.dll`** placed at `thats-lit-src/References/hollowed.dll` and referenced as `Assembly-CSharp` (see csproj change above).
-- **An SPT 4.0.13 install** for the remaining references, passed via the `EFTPath` build property.
-
-Build command (adjust the path to your install):
-
-```powershell
-dotnet build "thats-lit-src/source/ThatsLit.Core/ThatsLit.Core.csproj" -c Release -p:EFTPath="F:\SPT DEV INSTALLATION"
-```
-
-The post-build target copies `ThatsLit.Core.dll` (and the `Packed/` data files) into `$(EFTPath)\BepInEx\plugins\ThatsLit`.
-
-### Do NOT commit game-derived binaries
-
-`hollowed.dll`, `Assembly-CSharp.dll`, and any `spt-*`, `Comfort`, `Sirenix`, `UnityEngine.*`, BepInEx, or other game/SPT assemblies are **derived from EFT / SPT and must not be committed** to this repository (licensing). Keep them out of source control (`.gitignore` the `References/` folder and any copied managed DLLs).
-
-How to obtain them instead:
-
-- **`hollowed.dll`** — the community's deobfuscated/publicized `Assembly-CSharp` reference assembly for your exact SPT build. It ships in the reference set of current SPT mod source trees (e.g. SAIN's `References/` folder) and via the usual SPT modding reference-assembly distributions. Use the one matching SPT 4.0.13; drop it in `thats-lit-src/References/`.
-- **Install assemblies** — provided by your own licensed **SPT 4.0.13** installation; the build reads them in place through `EFTPath` (nothing is copied into the repo).
-
-Never redistribute these files with the source.
