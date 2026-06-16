@@ -1,3 +1,5 @@
+TO DOWNLOAD: Go to "Releases", find "ThatsLit SPT v4.0.13 Compat v1.000", download "ThatsLit4.0.13.zip", and unzip it into your SPT folder.
+
 Latest VirusTotal scan: https://www.virustotal.com/gui/file/3d9b96f675fcd1c42d33b38764a7880d7d0ce1db797536d962cfe14aeec0795a?nocache=1
 
 Please understand I fixed this code so I could play SPT with That's Lit because it's my favorite mod. I'm only uploading my code by request of a friend, I take no personal responsibility for maintaining or updating my fork of this mod beyond this version.
