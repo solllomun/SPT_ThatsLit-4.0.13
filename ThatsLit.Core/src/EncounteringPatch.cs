@@ -186,7 +186,7 @@ namespace ThatsLit.Patches.Vision
 
                 // ~30% chance to force a miss
                 if (rand2 < 0.225f  * (__state.unexpected? 1f : 0.5f) * Mathf.InverseLerp(0, 30, __state.visionDeviation) + 0.2f * Mathf.InverseLerp(0, 5, __instance.Person?.Velocity.magnitude ?? 0))
-                    aim.NextShotMiss();
+                    aim.NextShotMiss(1);
             }
             else if (__state.unexpected)
             {
@@ -198,7 +198,7 @@ namespace ThatsLit.Patches.Vision
 
                 // ~40% chance to force a miss
                 if (rand2 < 0.225f * Mathf.InverseLerp(0, 40f, __state.visionDeviation) + 0.2f * Mathf.InverseLerp(0, 5, __instance.Person?.Velocity.magnitude ?? 0))
-                    aim.NextShotMiss();
+                    aim.NextShotMiss(1);
             }
 
             ThatsLitPlugin.swEncountering.Stop();

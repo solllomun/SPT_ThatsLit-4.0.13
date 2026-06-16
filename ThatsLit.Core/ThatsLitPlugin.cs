@@ -3,6 +3,7 @@ using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using DrakiaXYZ.VersionChecker;
 using System;
+using SPT.Reflection.Patching;
 using static ThatsLit.AssemblyInfo;
 using ThatsLit.Patches.Vision;
 using System.Collections;
@@ -22,7 +23,7 @@ namespace ThatsLit
         public const string Trademark = "";
         public const string Culture = "";
 
-        public const int TarkovVersion = 35392;
+        public const int TarkovVersion = 40087;
         public const string EscapeFromTarkov = "EscapeFromTarkov.exe";
         public const string ModName = "That's Lit";
         public const string ModVersion = "1.4000.0";
@@ -327,13 +328,30 @@ namespace ThatsLit
 
         private void Patches()
         {
-            new SeenCoefPatch().Enable();
-            new EncounteringPatch().Enable();
-            new ExtraVisibleDistancePatch().Enable();
-            new InitiateShotMonitor().Enable();
-            new BlindFirePatch().Enable();
-            if (SAINLoaded)
-                new SAINNoBushOverride().Enable();
+            EnablePatch(new SeenCoefPatch());
+            EnablePatch(new EncounteringPatch());
+            EnablePatch(new ExtraVisibleDistancePatch());
+            EnablePatch(new InitiateShotMonitor());
+            EnablePatch(new BlindFirePatch());
+            // Only attach if SAIN actually exposes the No-Bush-ESP type. It was removed in SAIN 4.4.3
+            // (not renamed), so the lookup is null there and we self-skip silently (no error log). If a
+            // SAIN build that still has the feature is ever installed, this resolves and the patch enables as before.
+            if (SAINLoaded && Type.GetType("SAIN.Components.SAINNoBushESP, SAIN") != null)
+                EnablePatch(new SAINNoBushOverride());
+        }
+
+        // Enable a single patch in isolation: if one patch fails to apply (e.g. an EFT build
+        // renamed a target member), log it and continue so the rest of the mod still initializes.
+        private void EnablePatch(ModulePatch patch)
+        {
+            try
+            {
+                patch.Enable();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"[That's Lit] Failed to enable patch {patch.GetType().Name}, skipping it: {ex}");
+            }
         }
 
         private void Update()

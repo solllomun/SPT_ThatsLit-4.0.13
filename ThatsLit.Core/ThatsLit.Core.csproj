@@ -18,7 +18,11 @@
     <ManagedAssembliesPath>$(EFTPath)\EscapeFromTarkov_Data\Managed</ManagedAssembliesPath>
     <BepInExPath>$(EFTPath)\BepInEx\core</BepInExPath>
     <PluginsPath>$(EFTPath)\BepInEx\plugins</PluginsPath>
-    <AssemblySearchPaths>$(BepInExPath);$(ManagedAssembliesPath);$(PluginsPath)\spt;</AssemblySearchPaths>
+    <!-- Self-contained, repo-local references (deobfuscated Assembly-CSharp lives here). -->
+    <ReferencesPath>$(MSBuildProjectDirectory)\..\..\References</ReferencesPath>
+    <!-- {HintPathFromItem} must lead so explicit <HintPath>s (e.g. the deobfuscated
+         hollowed.dll for Assembly-CSharp) win over by-name lookup in the install dirs. -->
+    <AssemblySearchPaths>{HintPathFromItem};$(BepInExPath);$(ManagedAssembliesPath);$(PluginsPath)\spt;</AssemblySearchPaths>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,7 +43,10 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>$(ManagedAssembliesPath)\Assembly-CSharp.dll</HintPath>
+      <!-- Deobfuscated reference assembly (publicized + hollowed) that carries GClass* names.
+           The install's runtime Assembly-CSharp.dll has only raw obfuscated PUA names, so we
+           compile against this local copy instead. Other references stay on the install. -->
+      <HintPath>$(ReferencesPath)\hollowed.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="DissonanceVoip">

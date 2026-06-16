@@ -18,8 +18,13 @@ namespace ThatsLit
 
         protected override MethodBase GetTargetMethod()
         {
-            // not sure that this is the right method to replace, neeeds testing
-            return AccessTools.Method(typeof(EnemyInfo), "method_0");
+            // The old "method_0" name is obfuscator-assigned and shifts every EFT build.
+            // Match on a stable structural fingerprint instead: the only EnemyInfo method that returns
+            // float and takes a single BotOwner parameter (BotOwner is a named, non-obfuscated type).
+            return AccessTools.FirstMethod(typeof(EnemyInfo), m =>
+                m.ReturnType == typeof(float)
+                && m.GetParameters().Length == 1
+                && m.GetParameters()[0].ParameterType == typeof(BotOwner));
         }
 
         [PatchPrefix]
@@ -28,7 +33,10 @@ namespace ThatsLit
         {
             ThatsLitPlugin.swExtraVisDis.MaybeResume();
             if (__instance?.Owner == null
-             || (owner?.IsAI ?? true) == true
+             // Removed: "(owner?.IsAI ?? true) == true". In EFT 4.0 this method is called as
+             // this.<method>(this.Owner), so 'owner' is the OBSERVING bot -- always AI -- which tripped
+             // the guard on every call and made the patch inert. "Human players only" is already enforced
+             // by the AllThatsLitPlayers lookup below (ThatsLitGameworld registers only non-AI players).
              || !ThatsLitPlugin.EnabledMod.Value
              || ThatsLitPlugin.ExtraVisionDistanceScale.Value == 0
              || !ThatsLitPlugin.EnabledLighting.Value

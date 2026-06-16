@@ -16,19 +16,32 @@ namespace ThatsLit
     {
         private static PropertyInfo _enemyRel;
 
+        // ===== EFT 4.0.13 polarity-inversion tuning knobs (applied at the end of PatchPostfix) =====
+        // Chosen as behavior-preserving / permissive starting values; tune as noted.
+        private const float EPS             = 1e-6f;  // "already unseeable" / divide-by-zero guard on the vanilla coef. Tiny positive.
+        private const float MIN_COEF_RATIO  = 0.001f; // Relative floor on the FINAL coef: max stealth ~1000x slower than the vanilla baseline (original * this). Proportional to original, so it preserves the concealment gradient across maps and never rises above original (since < 1).
+        private const float SNIPER_CAP      = 50f;    // Max concealment 'impact' allowed under a sniper hint. Permissive (loose). Old code hard-capped the raw coef at 1.0 (~impact 1/original); lower this to restrict snipers more.
+        private const float FinalImpactKnob = 1.0f;   // Global multiplicative impact knob (replaces the additive FinalOffset). 1.0 => clean no-op; >1 => more concealment, <1 => less.
+
         protected override MethodBase GetTargetMethod()
         {
-            return ReflectionHelper.FindMethodByArgTypes(typeof(EnemyInfo), new Type[] { typeof(BotDifficultySettingsClass), typeof(IAIData), typeof(float), typeof(Vector3), typeof(float), typeof(float) }); ;
+            // Anchor on IAIData alone: it is the only parameter type on the seen-coef method that is
+            // both stable across obfuscation (interface names are not obfuscated) and unique within
+            // EnemyInfo (no other method takes an IAIData parameter). The former first arg type
+            // (BotDifficultySettingsClass) is now obfuscated and can no longer be named, and the method
+            // gained a 7th param (float deltaTime) -- neither matters here because FindMethodByArgTypes
+            // is a containment match that ignores parameter count and order.
+            return ReflectionHelper.FindMethodByArgTypes(typeof(EnemyInfo), new Type[] { typeof(IAIData) });
         }
 
         [PatchPostfix]
         [HarmonyAfter("me.sol.sain")]
-        public static void PatchPostfix(EnemyInfo __instance, float personalLastSeenTime, Vector3 personalLastSeenPos, ref float __result)
+        public static void PatchPostfix(EnemyInfo __instance, float personalLastSeenTime, Vector3 personalLastSeenPos, float deltaTime, ref float __result)
         {
             // Don't use GoalEnemy here because it only change when engaging new enemy (it'll stay indifinitely if not engaged with new enemy)
             // Also they could search without having visual?
 
-            if (__result >= 8888
+            if (__result <= EPS // was ">= 8888". __result here is EFT's unmodified vanilla coef (== original, captured below). Guards divide-by-zero and skips already-unseeable enemies (now the LOW end of the coef under 4.0 polarity).
              || !ThatsLitPlugin.EnabledMod.Value
              || (ThatsLitPlugin.FinalImpactScaleDelaying.Value == 0 && ThatsLitPlugin.FinalImpactScaleFastening.Value == 0)
              || ThatsLitPlugin.PMCOnlyMode.Value && !Utility.IsPMCSpawnType(__instance.Owner?.Profile?.Info?.Settings?.Role))
@@ -850,9 +863,9 @@ namespace ThatsLit
             var upperVisible = 4;
             foreach (var p in __instance.AllActiveParts)
             {
-                if (!p.Value.LastVisibilityCastSucceed)
+                if (!__instance.AllPartsVision[p].HasLineOfSight)
                 {
-                    switch (p.Key.BodyPartType)
+                    switch (p)
                     {
                         case BodyPartType.head:
                             visibleParts -= 0.5f; // easier to recognize
@@ -981,9 +994,10 @@ namespace ThatsLit
 
             // Anti sniper
             float sniperHintChance = pPoseFactor * 0.2f * Mathf.InverseLerp(1f, 0f, player.OverheadHaxRatingFactor) * Mathf.InverseLerp(1f, 0f, insideTime) * Mathf.InverseLerp(250f, 25f, zoomedDis) * Mathf.InverseLerp(15f, 1f, visionAngleDeltaHorizontal) * Mathf.InverseLerp(1f, 0f, botVelocity) * Mathf.InverseLerp(5, 30f, eyeToPlayerBody.y);
+            bool sniperHint = false;
             if (rand3 < sniperHintChance)
             {
-                __result = Mathf.Min(__result, 1f);
+                sniperHint = true; // was: __result = Mathf.Min(__result, 1f); now applied as an impact cap in the final block
                 if (player.DebugInfo != null)
                 {
                     player.DebugInfo.sniperHintOffset = eyeToPlayerBody;
@@ -1011,17 +1025,28 @@ namespace ThatsLit
             //     }
             // }
 
-            // Up to 50% penalty
-            if (__result < 0.5f * original)
-            {
-                __result = 0.5f * original;
-            }
+            // ===== EFT 4.0.13 polarity inversion (§3 model) =====
+            // Everything above built M in the LEGACY model where a higher coef == more concealed
+            // ("longer to spot"). EFT 4.0 reads this coef as visibility-fill SPEED (higher == seen
+            // FASTER), so we convert the mod's intent into a magnitude ratio and apply it inverted:
+            // more concealed => LOWER coef => slower bar fill => harder to detect.
+            // BASELINE: if no branch fired, M == original => impact == 1 => __result == original (clean no-op).
+            float M = __result;
+            float impact = M / original;                 // >1 = wants concealment, <1 = wants faster detection, ==1 = no effect
 
-            __result = Mathf.Lerp(original, __result, __result < original ? ThatsLitPlugin.FinalImpactScaleFastening.Value : ThatsLitPlugin.FinalImpactScaleDelaying.Value);
+            impact = Mathf.Max(impact, 0.5f);            // was "up to 50% penalty" (old floored M at 0.5*original): caps fastening so the coef stays <= 2x original
+            if (sniperHint) impact = Mathf.Min(impact, SNIPER_CAP); // was anti-sniper Mathf.Min(__result, 1f): limits sniper concealment
 
-            __result += ThatsLitPlugin.FinalOffset.Value;
-            if (__result < 0.005f)
-                __result = 0.005f;
+            // Final impact scaling (was the FinalImpactScale lerp), applied to the magnitude in log space:
+            float finalScale = impact >= 1f ? ThatsLitPlugin.FinalImpactScaleDelaying.Value : ThatsLitPlugin.FinalImpactScaleFastening.Value;
+            impact = Mathf.Pow(impact, finalScale);      // scale 1 => full effect, 0 => neutral (impact -> 1); impact == 1 stays 1
+
+            impact *= FinalImpactKnob;                   // replaces additive FinalOffset; multiplicative, default 1.0 => clean no-op
+
+            // Relative floor: cap max stealth at MIN_COEF_RATIO x the vanilla coef (~1000x slower detection).
+            // Proportional to original, so the concealment gradient survives across maps/baselines, and because
+            // MIN_COEF_RATIO < 1 the floor stays below original -> it never raises a low-baseline result above vanilla.
+            __result = Mathf.Max(original / impact, original * MIN_COEF_RATIO); // 4.0-correct polarity: concealment LOWERS the speed coef
 
             if (player.DebugInfo != null)
             {
