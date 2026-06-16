@@ -1,1 +1,3 @@
-![](https://img.shields.io/github/downloads/No3371/SPT_ThatsLit/total) ![](https://img.shields.io/github/downloads/No3371/SPT_ThatsLit/latest/total)
+AI summary of the update:
+
+This is a compatibility patch for the "That's Lit" SPT mod, updating it from SPT 3.11 (EFT build 35392) to SPT 4.0.13 (EFT build 40087). The core changes involved fixing broken method lookups caused by obfuscation shifts, updating patch signatures to match new EFT method parameters, rewriting the per-part visibility loop to match a refactored API, and inverting the seen-coefficient polarity since EFT 4.0 reversed its meaning (higher now means detected faster, not slower). Several secondary patches were also hardened against failure, and the build system was updated to reference a deobfuscated assembly rather than the raw obfuscated runtime DLL.
