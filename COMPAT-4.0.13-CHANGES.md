@@ -51,7 +51,7 @@ This is the heart of the mod and took the most work.
    ```
    The legacy `__result >= 8888` "already invisible" sentinel was replaced with `__result <= EPS` (now the low end of the coefficient, and a divide-by-zero guard). New tuning constants `EPS`, `SNIPER_CAP`, `FinalImpactKnob` were added with behavior-preserving / permissive defaults. Baseline is preserved: if no concealment branch fires, `M == original` → `impact == 1` → `__result == original` (clean no-op).
 
-5. **Relative floor replaces the absolute one.**
+5. **(WIP CHANGE, MAY REVERT, FURTHER TESTING REQUIRED) Relative floor replaces the absolute one.**
    The first inversion pass used an absolute floor (`MIN_COEF = 0.005`). Because the vanilla coefficient varies by orders of magnitude across maps/lighting (observed `0.019` vs `0.001`), an absolute floor flattened the whole concealment gradient and — when `original < 0.005` — actually raised the result above vanilla (inverting the low-baseline case). It was replaced with a relative floor:
    ```csharp
    __result = Mathf.Max(original / impact, original * MIN_COEF_RATIO); // MIN_COEF_RATIO = 0.001f
