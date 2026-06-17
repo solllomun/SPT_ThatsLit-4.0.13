@@ -1,4 +1,4 @@
-TO DOWNLOAD: Go to "Releases", find "ThatsLit SPT v4.0.13 Compat v1.000", download "ThatsLit4.0.13.zip", and unzip it into your SPT folder.
+TO DOWNLOAD: Go to "Releases", find "ThatsLit SPT v4.0.13 Compat v1.x" (the newest one), download the zip file (not the source code), and unzip it into your SPT folder.
 
 Latest VirusTotal scan: https://www.virustotal.com/gui/file/3d9b96f675fcd1c42d33b38764a7880d7d0ce1db797536d962cfe14aeec0795a?nocache=1
 
